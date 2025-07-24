@@ -48,7 +48,7 @@ emscripten::val generateIco(const std::vector<emscripten::val>& png_files) {
     std::vector<char> all_png_data;
     for (int i=0; i < png_files.size(); ++i) {
         // Convert the JavaScript Uint8Array into a C++ vector of characters
-        std::vector<unsigned char> png_data_uc = emscripten::vecFromJSArray<unsigned char>(png_files[i]);
+        std::vector<unsigned char> uc_png_data = emscripten::vecFromJSArray<unsigned char>(png_files[i]);
 
         unsigned int width, height;
         // unsigned error = lodepng::decode(nullptr, width, height, uc_png_data);

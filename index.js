@@ -28,7 +28,7 @@ export async function convertPngToIco(pngFiles) {
 
     pngCppVector.delete();
 
-    if (!iconData) {
+    if (!icoData) {
         throw new Error("Failed to generate ICO data.");
     }
     // wasmModule._free(icoData.byteOffset); // Free the memory allocated for the ICO data
