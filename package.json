@@ -1,0 +1,18 @@
+{
+  "name": "@pkvsinha/pngtoico",
+  "version": "0.0.1",
+  "description": "PNG to ICO converter using web assembly",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "dist"
+  ],
+  "scripts": {
+    "build:win": ".\\build.bat",
+    "build:linux": "bash build.sh",
+    "build": "npm run build:linux",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Prashant Siha",
+  "license": "MIT"
+}

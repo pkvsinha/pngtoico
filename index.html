@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNG to ICO Converter (WASM)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f7f6;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            border: 2px dashed #28a745;
+            border-radius: 8px;
+            padding: 30px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #message {
+            margin-top: 15px;
+            color: #d9534f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>PNG to ICO Converter (WASM)</h1>
+        <p>Select up to 5 PNG images to create an ICO file using WebAssembly.</p>
+        
+        <input type="file" id="png-input" accept="image/png" multiple>
+        <button id="convert-btn" disabled>Convert to ICO</button>
+        <div id="message"></div>
+    </div>
+
+    <script src="dist/local_pngtoico.js"></script>
+    
+    <script>
+        const pngInput = document.getElementById('png-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const messageDiv = document.getElementById('message');
+
+        // This variable will hold our initialized WASM module instance.
+        let wasmModule;
+
+        // The createConverterModule function is from our generated converter.js
+        // It asynchronously loads and initializes the WASM module.
+        createConverterModule().then(module => {
+            wasmModule = module;
+            messageDiv.textContent = 'WASM module loaded successfully!';
+            // You could enable the file input here if it was disabled by default
+        });
+
+        pngInput.addEventListener('change', () => {
+            const files = pngInput.files;
+            messageDiv.textContent = '';
+            
+            if (files.length > 5) {
+                messageDiv.textContent = 'Error: Please select a maximum of 5 files.';
+                convertBtn.disabled = true;
+                pngInput.value = '';
+                return;
+            }
+            
+            convertBtn.disabled = files.length === 0;
+        });
+
+        convertBtn.addEventListener('click', async () => {
+            if (!wasmModule) {
+                messageDiv.textContent = 'WASM module is not ready yet. Please wait.';
+                return;
+            }
+            
+            const files = Array.from(pngInput.files);
+            if (files.length === 0) {
+                messageDiv.textContent = 'Please select at least one PNG file.';
+                return;
+            }
+
+            try {
+                messageDiv.textContent = 'Reading files...';
+                convertBtn.disabled = true;
+
+                // 1. Read all files into memory as ArrayBuffers.
+                const fileReadPromises = files.map(file => file.arrayBuffer());
+                const fileBuffers = await Promise.all(fileReadPromises);
+
+                // 2. Convert ArrayBuffers to Uint8Arrays for C++.
+                // We also put them into a special Vector type that embind created for us.
+                const pngVector = new wasmModule.VectorVal();
+                fileBuffers.forEach(buffer => {
+                    pngVector.push_back(new Uint8Array(buffer));
+                });
+
+                messageDiv.textContent = 'Converting with WASM...';
+
+                // 3. Call our C++ function!
+                const icoUint8Array = wasmModule.generateIco(pngVector);
+
+                // The vector needs to be destroyed to free up memory on the WASM heap.
+                pngVector.delete(); 
+                
+                if (!icoUint8Array) {
+                    throw new Error("The C++ module failed to convert the files.");
+                }
+
+                // 4. Create a Blob and trigger the download, just like before.
+                const blob = new Blob([icoUint8Array], { type: 'image/x-icon' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'favicon.ico';
+                document.body.appendChild(link);
+                link.click();
+                
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                messageDiv.textContent = 'Conversion successful! 🎉';
+                pngInput.value = '';
+                
+            } catch (error) {
+                console.error('Conversion failed:', error);
+                messageDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                convertBtn.disabled = files.length === 0;
+            }
+        });
+    </script>
+</body>
+</html>
