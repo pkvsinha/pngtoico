@@ -7,6 +7,14 @@
     "index.js",
     "dist"
   ],
+  "repository": "https://github.com/pkvsinha/pngtoico",
+  "keywords": [
+    "favicon",
+    "png to ico",
+    "ico",
+    "wasm",
+    "web assembly"
+  ],
   "scripts": {
     "build:win": ".\\build.bat",
     "build:linux": "bash build.sh",
