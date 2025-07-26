@@ -14,8 +14,23 @@ npm install @pkvsinha/pngtoico
 ```js
 import { convertPngsToIco } from '@pkvsinha/pngtoico';
 
-// Example usage
-const icoBuffer = await convertPngsToIco([pngBuffer1, pngBuffer2]);
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        const files = ["should be file(s) input like e.target.files"];
+        const icoBlob = await convertPngToIco(files);
+        const url = URL.createObjectURL(icoBlob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "favicon.ico";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.log(error);
+    }
+};
 ```
 
 ## Webpack Integration
